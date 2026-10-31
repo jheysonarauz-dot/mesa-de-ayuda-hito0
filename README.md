@@ -1,4 +1,4 @@
-# Sistema de Mesa de Ayuda - Hito 0
+# Sistema de Mesa de Ayuda
 
 Propósito del sistema: Aplicación para registrar y dar seguimiento a solicitudes de soporte técnico, sirviendo como punto de partida para la primera versión en C# y Blazor.
 

@@ -4,7 +4,7 @@ Propósito del sistema: Aplicación para registrar y dar seguimiento a solicitud
 
 ## Integrantes
 * Jheyson Arauz
-* *(Agrega el nombre de tu pareja si trabajas en equipo, o bórralo si es individual)*
+* Jeremy Thorp
 
 ## Documentación
 * [Ver la propuesta detallada (Hito 0)](./hito-0.md)

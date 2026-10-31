@@ -26,4 +26,3 @@ public class TicketRepositorio
     public int Cerrados => _tickets.Count(t => t.Estado == EstadoTicket.Cerrado);
 }
 
-}

@@ -1,4 +1,4 @@
-# Propuesta y Modelo Inicial (Hito 0) - Plataforma de Auditoría y Custodia Segura de Código (Mesa de Ayuda)
+# Propuesta y Modelo Inicial (Hito 0) 
 
 ## 1. Situación y usuario
 En el desarrollo de software actual, el registro, análisis y seguimiento de las solicitudes de soporte técnico y reporte de vulnerabilidades se manejan de forma fragmentada. Hoy en día, los desarrolladores y equipos de TI reciben reportes de fallos, solicitudes de auditoría y hallazgos de seguridad mediante canales informales como correo electrónico, chats internos o notas manuales. Esta falta de estandarización dificulta el seguimiento trazable de los problemas, impidiendo saber con certeza quién reportó un fallo, qué versión del código o paquete está afectada y en qué estado de resolución se encuentra cada solicitud.

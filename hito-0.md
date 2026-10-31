@@ -1,34 +1,25 @@
 # Propuesta y Modelo Inicial (Hito 0) 
 
-## 1. Situación y usuario
-En el desarrollo de software actual, el registro, análisis y seguimiento de las solicitudes de soporte técnico y reporte de vulnerabilidades se manejan de forma fragmentada. Hoy en día, los desarrolladores y equipos de TI reciben reportes de fallos, solicitudes de auditoría y hallazgos de seguridad mediante canales informales como correo electrónico, chats internos o notas manuales. Esta falta de estandarización dificulta el seguimiento trazable de los problemas, impidiendo saber con certeza quién reportó un fallo, qué versión del código o paquete está afectada y en qué estado de resolución se encuentra cada solicitud.
-
-El sistema será utilizado por desarrolladores independientes, líderes de equipo y administradores de seguridad. Estos usuarios necesitan registrar solicitudes de revisión, consultar el historial de hallazgos (como secretos expuestos o dependencias vulnerables con NuGet Audit) y verificar si un ticket ha sido atendido o resuelto mediante una actualización de versión o rotación de claves.
-
-El sistema resolverá la desorganización centralizando los tickets de soporte técnico, asociando cada solicitud con un proyecto, una gravedad estimada y un estado transparente de resolución.
-
-## 2. Acciones y resultados
+1. Situación y usuario
+En muchas oficinas y áreas de TI, las solicitudes de soporte técnico (por ejemplo, un equipo que no enciende o una falla de conexión a internet) llegan por canales informales como mensajes, llamadas o correos. Sin un registro central es difícil saber qué solicitudes están pendientes, cuáles son más urgentes y cuáles ya se atendieron.
+El sistema lo usarían las personas que reportan un problema y el personal de soporte que lo atiende. Necesitan registrar solicitudes, consultar su estado y saber si ya fueron resueltas.
+El sistema resuelve la desorganización centralizando las solicitudes como tickets, y cada uno tiene un proyecto afectado, una prioridad y un estado claro de resolución.
+2. Acciones y resultados
 El sistema permitirá gestionar el ciclo de vida de las solicitudes mediante cuatro acciones principales:
-
-1. **Registrar Ticket:**
-   - **Acción:** La persona usuaria completa un formulario ingresando el título, descripción, proyecto afectado y nivel de prioridad o gravedad.
-   - **Resultado:** El sistema valida la información, asigna un identificador único, registra la fecha de creación y muestra una confirmación en pantalla junto con el detalle del ticket en estado "Nuevo".
-
-2. **Listar Tickets:**
-   - **Acción:** La persona usuaria accede al panel principal o aplica un filtro por estado (ej. "Nuevo", "En Proceso", "Resuelto").
-   - **Resultado:** El sistema despliega una tabla interactiva con el resumen de las solicitudes, mostrando su ID, título, fecha, prioridad y estado actual.
-
-3. **Consultar Ticket:**
-   - **Acción:** La persona usuaria selecciona un ticket específico de la lista.
-   - **Resultado:** El sistema presenta la vista detallada del ticket, incluyendo la descripción completa, el historial de cambios, los hallazgos o archivos asociados y las acciones disponibles.
-
-4. **Cambiar Estado:**
-   - **Acción:** Un usuario autorizado (ej. un desarrollador asignado) modifica el estado del ticket de "En Proceso" a "Resuelto" ingresando una nota de resolución.
-   - **Resultado:** El sistema actualiza el registro, registra la traza de auditoría y muestra un mensaje informando que el estado fue cambiado exitosamente.
-
-## 3. Clases iniciales
-Para el modelo inicial en C#, se define la clase principal `Ticket` que encapsulated la información y reglas del negocio:
-
+Registrar Ticket:
+Acción: La persona usuaria completa un formulario ingresando el título, descripción, proyecto afectado y nivel de prioridad.
+Resultado: El sistema valida la información, asigna un identificador único, registra la fecha de creación y muestra una confirmación en pantalla junto con el detalle del ticket en estado "Nuevo".
+Listar Tickets:
+Acción: La persona usuaria accede al panel principal o aplica un filtro por estado (ej. "Nuevo", "En Proceso", "Resuelto").
+Resultado: El sistema despliega una tabla con el resumen de las solicitudes, mostrando su ID, título, fecha, prioridad y estado actual.
+Consultar Ticket:
+Acción: La persona usuaria selecciona un ticket específico de la lista.
+Resultado: El sistema presenta la vista detallada del ticket, incluyendo la descripción completa, el proyecto, la prioridad, el estado y las acciones disponibles.
+Cambiar Estado:
+Acción: Una persona de soporte modifica el estado del ticket de "En Proceso" a "Resuelto" ingresando una nota de resolución.
+Resultado: El sistema actualiza el registro y muestra un mensaje informando que el estado fue cambiado exitosamente.
+3. Clases iniciales
+Para el modelo inicial en C#, se define la clase principal `Ticket`, que encapsula la información y las reglas del negocio:
 ```csharp
 public class Ticket
 {
@@ -59,3 +50,4 @@ public class Ticket
         NotaResolucion = nota;
     }
 }
+```

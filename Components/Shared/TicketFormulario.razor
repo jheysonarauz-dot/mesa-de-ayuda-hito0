@@ -1,0 +1,71 @@
+@* Formulario reutilizable para registrar y editar. Recibe datos por parametros y avisa al padre con eventos. *@
+
+<EditForm Model="Modelo" OnValidSubmit="EnviarAsync" class="formulario">
+    <DataAnnotationsValidator />
+
+    <h2>@(EsEdicion ? "Editar ticket" : "Nuevo ticket")</h2>
+
+    <div class="campo">
+        <label for="titulo">Título</label>
+        <InputText id="titulo" @bind-Value="Modelo.Titulo" />
+        <ValidationMessage For="() => Modelo.Titulo" />
+    </div>
+
+    <div class="campo">
+        <label for="descripcion">Descripción</label>
+        <InputTextArea id="descripcion" rows="4" @bind-Value="Modelo.Descripcion" />
+        <ValidationMessage For="() => Modelo.Descripcion" />
+    </div>
+
+    <div class="campo">
+        <label for="proyecto">Proyecto</label>
+        <InputSelect id="proyecto" @bind-Value="Modelo.ProyectoId">
+            <option value="0">Seleccione un proyecto…</option>
+            @foreach (var proyecto in Proyectos)
+            {
+                <option value="@proyecto.Id">@proyecto.Nombre</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="() => Modelo.ProyectoId" />
+    </div>
+
+    <div class="campo">
+        <label for="prioridad">Prioridad</label>
+        <InputSelect id="prioridad" @bind-Value="Modelo.Prioridad">
+            @foreach (var prioridad in Ticket.PrioridadesPermitidas)
+            {
+                <option value="@prioridad">@prioridad</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="() => Modelo.Prioridad" />
+    </div>
+
+    <div class="acciones">
+        <button type="submit" class="btn btn-primario" disabled="@_guardando">Guardar</button>
+        <button type="button" class="btn" @onclick="OnCancelar" disabled="@_guardando">Cancelar</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public TicketFormModel Modelo { get; set; } = new();
+    [Parameter, EditorRequired] public IReadOnlyList<Proyecto> Proyectos { get; set; } = Array.Empty<Proyecto>();
+    [Parameter] public bool EsEdicion { get; set; }
+    [Parameter] public EventCallback<TicketFormModel> OnGuardar { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+
+    private bool _guardando;
+
+    // Se ejecuta solo si el formulario paso la validacion de la interfaz.
+    private async Task EnviarAsync()
+    {
+        _guardando = true;   // evita enviar dos veces mientras se guarda
+        try
+        {
+            await OnGuardar.InvokeAsync(Modelo);
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+}

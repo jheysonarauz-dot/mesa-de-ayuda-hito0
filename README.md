@@ -31,13 +31,27 @@ SELECT COUNT(*) FROM proyectos;   -- 4
 SELECT COUNT(*) FROM tickets;     -- 6
 ```
 
-### 2. Configurar la conexión (sin subir credenciales al repositorio)
-El archivo `appsettings.json` solo trae valores de ejemplo (`TU_USUARIO` y `TU_CONTRASENA`). Las credenciales reales se guardan en los *user secrets* de .NET, que quedan fuera del repositorio. Desde la carpeta del proyecto:
+### 2. Configurar la conexión a la base de datos
 
+Cada integrante debe configurar la conexión a MySQL o MariaDB según su instalación local. El servidor, puerto, usuario y contraseña pueden ser diferentes entre los integrantes. Estos valores no deben estar fijados en el código ni compartirse mediante el repositorio.
+
+Para configurar la conexión de forma segura, se utiliza **.NET User Secrets**, que permite almacenar las credenciales localmente, fuera del repositorio.
+
+Desde la carpeta del proyecto que contiene `MesaAyuda.csproj`, cada integrante debe ejecutar:
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:MesaAyuda" "Server=127.0.0.1;Port=PUERTO;Database=mesa_ayuda;User ID=USUARIO;Password=CONTRASEÑA;"
 ```
-dotnet user-secrets set "ConnectionStrings:MesaAyuda" "Server=localhost;Port=3306;Database=mesa_ayuda;User ID=TU_USUARIO;Password=TU_CONTRASENA;"
-```
-Si el servidor es externo, cambiar `Server` y `Port`. También se puede usar la variable de entorno `ConnectionStrings__MesaAyuda`.
+
+Cada integrante debe reemplazar los valores de ejemplo por los correspondientes a su instalación.
+
+**Ejemplos:**
+- MySQL en el puerto `3306`.
+- MariaDB mediante XAMPP en el puerto `3307`.
+
+También se puede utilizar la variable de entorno `ConnectionStrings__MesaAyuda` para proporcionar la cadena de conexión.
+
+**Importante:** No subir contraseñas ni credenciales personales al repositorio de GitHub. Cada integrante configura sus propios datos localmente.
 
 ### 3. Ejecutar
 ```

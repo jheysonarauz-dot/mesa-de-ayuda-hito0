@@ -1,10 +1,14 @@
 using MesaAyuda.Components;
+using MesaAyuda.Data;
+using MesaAyuda.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Blazor con componentes interactivos en el servidor.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddScoped<ITicketRepositorio, TicketRepositorioMySql>();
+builder.Services.AddScoped<TicketServicio>();
 
 var app = builder.Build();
 

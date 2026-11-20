@@ -1,8 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-       <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- Permite guardar la cadena de conexion fuera del repositorio (dotnet user-secrets). -->
+    <UserSecretsId>mesa-ayuda-hito2-7d3f1c52</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Proveedor ADO.NET para MySQL con soporte explicito para net10.0 -->
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+  </ItemGroup>
+
 </Project>

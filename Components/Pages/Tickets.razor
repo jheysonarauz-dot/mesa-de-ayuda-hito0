@@ -1,0 +1,414 @@
+@page "/"
+@rendermode InteractiveServer
+@inject TicketServicio Servicio
+
+<PageTitle>Mesa de Ayuda</PageTitle>
+
+<header class="encabezado">
+    <h1>Mesa de Ayuda</h1>
+    <button class="btn btn-primario" @onclick="NuevoTicket">+ Nuevo ticket</button>
+</header>
+
+<section class="tarjetas" aria-label="Cantidades">
+    <div class="tarjeta">
+        <span class="tarjeta-valor">@_conteo.Total</span>
+        <span>Total</span>
+    </div>
+    <div class="tarjeta tarjeta-abierto">
+        <span class="tarjeta-valor">@_conteo.Abiertos</span>
+        <span>Abiertos</span>
+    </div>
+    <div class="tarjeta tarjeta-cerrado">
+        <span class="tarjeta-valor">@_conteo.Cerrados</span>
+        <span>Cerrados</span>
+    </div>
+</section>
+<p class="nota">Las cantidades corresponden a todos los tickets, aunque haya un filtro activo.</p>
+
+@if (_mensaje is not null)
+{
+    <div class="alerta @ClaseAlerta(_mensaje.Tipo)" role="alert">
+        <strong>@_mensaje.Titulo</strong>
+        @if (_mensaje.Detalles.Count > 0)
+        {
+            <ul>
+                @foreach (var detalle in _mensaje.Detalles)
+                {
+                    <li>@detalle</li>
+                }
+            </ul>
+        }
+        <button class="alerta-cerrar" @onclick="OcultarMensaje" aria-label="Cerrar aviso">×</button>
+    </div>
+}
+
+<section class="filtros">
+    <label>
+        Estado
+        <select @bind="_filtroEstado" @bind:after="AplicarFiltroAsync">
+            <option value="">Todos</option>
+            <option value="Abierto">Abiertos</option>
+            <option value="Cerrado">Cerrados</option>
+        </select>
+    </label>
+    <label>
+        Proyecto
+        <select @bind="_filtroProyecto" @bind:after="AplicarFiltroAsync">
+            <option value="0">Todos</option>
+            @foreach (var proyecto in _proyectos)
+            {
+                <option value="@proyecto.Id">@proyecto.Nombre</option>
+            }
+        </select>
+    </label>
+    <button class="btn" @onclick="LimpiarFiltrosAsync" disabled="@(!HayFiltroActivo)">Ver todos</button>
+</section>
+
+<div class="rejilla">
+    <section class="panel">
+        <h2>Tickets</h2>
+
+        @if (_cargando)
+        {
+            <p class="vacio">Cargando…</p>
+        }
+        else if (_errorCarga)
+        {
+            <p class="vacio vacio-error">No se pudo cargar el listado. Revise el aviso e intente de nuevo.</p>
+            <button class="btn" @onclick="RecargarAsync">Reintentar</button>
+        }
+        else if (_tickets.Count == 0)
+        {
+            <p class="vacio">
+                @(HayFiltroActivo ? "No hay tickets que coincidan con el filtro." : "Aún no hay tickets registrados.")
+            </p>
+            @if (HayFiltroActivo)
+            {
+                <button class="btn" @onclick="LimpiarFiltrosAsync">Ver todos</button>
+            }
+        }
+        else
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Proyecto</th>
+                        <th>Prioridad</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ticket in _tickets)
+                    {
+                        <tr class="@(ticket.Id == _seleccionado?.Id ? "seleccionada" : "")">
+                            <td>#@ticket.Id</td>
+                            <td><button class="enlace" @onclick="() => SeleccionarAsync(ticket.Id)">@ticket.Titulo</button></td>
+                            <td>@ticket.ProyectoNombre</td>
+                            <td>@ticket.Prioridad</td>
+                            <td><span class="etiqueta @ClaseEstado(ticket.Estado)">@ticket.Estado</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    <section class="panel">
+        @switch (_modo)
+        {
+            case ModoPanel.Crear:
+            case ModoPanel.Editar:
+                <TicketFormulario Modelo="_formulario"
+                                  Proyectos="_proyectos"
+                                  EsEdicion="@(_modo == ModoPanel.Editar)"
+                                  OnGuardar="GuardarAsync"
+                                  OnCancelar="CancelarFormulario" />
+                break;
+
+            case ModoPanel.Cerrar:
+                <h2>Cerrar ticket #@_seleccionado?.Id</h2>
+                <p>Indique cómo se resolvió el ticket. La nota es obligatoria.</p>
+                <div class="campo">
+                    <label for="nota">Nota de resolución</label>
+                    <textarea id="nota" rows="3" @bind="_notaCierre" @bind:event="oninput"></textarea>
+                </div>
+                <div class="acciones">
+                    <button class="btn btn-primario" @onclick="ConfirmarCierreAsync">Confirmar cierre</button>
+                    <button class="btn" @onclick="CancelarAccion">Cancelar</button>
+                </div>
+                break;
+
+            case ModoPanel.ConfirmarEliminar:
+                <h2>Eliminar ticket #@_seleccionado?.Id</h2>
+                <p>¿Seguro que desea eliminar «@_seleccionado?.Titulo»? Esta acción no se puede deshacer.</p>
+                <div class="acciones">
+                    <button class="btn btn-peligro" @onclick="ConfirmarEliminarAsync">Sí, eliminar</button>
+                    <button class="btn" @onclick="CancelarEliminar">Cancelar</button>
+                </div>
+                break;
+
+            default:
+                if (_seleccionado is null)
+                {
+                    <h2>Detalle</h2>
+                    <p class="vacio">Seleccione un ticket de la lista para ver su información completa.</p>
+                }
+                else
+                {
+                    <h2>Ticket #@_seleccionado.Id</h2>
+                    <dl class="detalle">
+                        <dt>Título</dt>
+                        <dd>@_seleccionado.Titulo</dd>
+                        <dt>Descripción</dt>
+                        <dd>@_seleccionado.Descripcion</dd>
+                        <dt>Proyecto</dt>
+                        <dd>@_seleccionado.ProyectoNombre</dd>
+                        <dt>Prioridad</dt>
+                        <dd>@_seleccionado.Prioridad</dd>
+                        <dt>Estado</dt>
+                        <dd><span class="etiqueta @ClaseEstado(_seleccionado.Estado)">@_seleccionado.Estado</span></dd>
+                        <dt>Creado</dt>
+                        <dd>@_seleccionado.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</dd>
+                        @if (_seleccionado.NotaResolucion is not null)
+                        {
+                            <dt>Nota de resolución</dt>
+                            <dd>@_seleccionado.NotaResolucion</dd>
+                        }
+                    </dl>
+                    <div class="acciones">
+                        <button class="btn" @onclick="EditarSeleccionado"
+                                disabled="@(_seleccionado.Estado == EstadoTicket.Cerrado)">Editar</button>
+                        <button class="btn" @onclick="PedirCierre"
+                                disabled="@(_seleccionado.Estado == EstadoTicket.Cerrado)">Cerrar ticket</button>
+                        <button class="btn btn-peligro" @onclick="PedirEliminar">Eliminar</button>
+                    </div>
+                }
+                break;
+        }
+    </section>
+</div>
+
+@code {
+    private enum ModoPanel { Detalle, Crear, Editar, Cerrar, ConfirmarEliminar }
+    private enum TipoMensaje { Exito, Info, Error }
+    private sealed record Mensaje(TipoMensaje Tipo, string Titulo, IReadOnlyList<string> Detalles);
+
+    private List<Ticket> _tickets = new();
+    private IReadOnlyList<Proyecto> _proyectos = Array.Empty<Proyecto>();
+    private ConteoTickets _conteo;
+    private Ticket? _seleccionado;
+    private TicketFormModel _formulario = new();
+    private string _notaCierre = string.Empty;
+    private Mensaje? _mensaje;
+    private ModoPanel _modo = ModoPanel.Detalle;
+
+    private string _filtroEstado = string.Empty;   // "" = todos
+    private int _filtroProyecto;                   // 0 = todos
+
+    private bool _cargando = true;
+    private bool _errorCarga;
+
+    private bool HayFiltroActivo => _filtroEstado != string.Empty || _filtroProyecto != 0;
+    private EstadoTicket? EstadoFiltro => Enum.TryParse<EstadoTicket>(_filtroEstado, out var estado) ? estado : null;
+    private int? ProyectoFiltro => _filtroProyecto == 0 ? null : _filtroProyecto;
+
+    // Se ejecuta al crear el componente: carga los proyectos y el listado desde la base.
+    protected override async Task OnInitializedAsync()
+    {
+        var proyectos = await Servicio.ListarProyectosAsync();
+        if (proyectos.EsExito)
+            _proyectos = proyectos.Valor!;
+        else
+            MostrarResultado(proyectos);
+
+        await RecargarAsync();
+    }
+
+    // Vuelve a leer de la base: el listado (con el filtro activo) y las cantidades (del conjunto completo).
+    private async Task RecargarAsync()
+    {
+        _cargando = true;
+
+        var conteo = await Servicio.ContarAsync();
+        var lista = await Servicio.ListarAsync(EstadoFiltro, ProyectoFiltro);
+
+        if (conteo.EsExito && lista.EsExito)
+        {
+            _conteo = conteo.Valor;
+            _tickets = lista.Valor!.ToList();
+            _errorCarga = false;
+        }
+        else
+        {
+            _errorCarga = true;
+            if (!conteo.EsExito)
+                MostrarResultado(conteo);
+            else
+                MostrarResultado(lista);
+        }
+
+        _cargando = false;
+    }
+
+    // ---- Filtros (no modifican ni borran registros: solo cambian lo que se lee) ----
+    private Task AplicarFiltroAsync() => RecargarAsync();
+
+    private async Task LimpiarFiltrosAsync()
+    {
+        _filtroEstado = string.Empty;
+        _filtroProyecto = 0;
+        await RecargarAsync();
+    }
+
+    // ---- Consulta ----
+    private async Task SeleccionarAsync(int id)
+    {
+        _mensaje = null;
+        _modo = ModoPanel.Detalle;
+        await CargarSeleccionadoAsync(id);
+    }
+
+    private async Task CargarSeleccionadoAsync(int id)
+    {
+        var resultado = await Servicio.ObtenerAsync(id);
+        if (resultado.EsExito)
+        {
+            _seleccionado = resultado.Valor;
+            return;
+        }
+
+        MostrarResultado(resultado);
+        if (resultado.Tipo == TipoResultado.NoEncontrado)
+        {
+            _seleccionado = null;
+            await RecargarAsync();
+        }
+    }
+
+    // ---- Registrar y editar ----
+    private void NuevoTicket()
+    {
+        _mensaje = null;
+        _formulario = new TicketFormModel();
+        _modo = ModoPanel.Crear;
+    }
+
+    private void EditarSeleccionado()
+    {
+        if (_seleccionado is null) return;
+        _mensaje = null;
+        _formulario = TicketFormModel.Desde(_seleccionado);
+        _modo = ModoPanel.Editar;
+    }
+
+    private void CancelarFormulario() => _modo = ModoPanel.Detalle;
+
+    // Manejador del evento OnGuardar del formulario.
+    private async Task GuardarAsync(TicketFormModel datos)
+    {
+        Resultado<int> resultado = _modo == ModoPanel.Crear
+            ? await Servicio.RegistrarAsync(datos.Titulo, datos.Descripcion, datos.ProyectoId, datos.Prioridad)
+            : await Servicio.EditarAsync(_seleccionado!.Id, datos.Titulo, datos.Descripcion, datos.ProyectoId, datos.Prioridad);
+
+        MostrarResultado(resultado);
+
+        if (resultado.Tipo == TipoResultado.NoEncontrado)
+        {
+            _seleccionado = null;
+            _modo = ModoPanel.Detalle;
+            await RecargarAsync();
+            return;
+        }
+
+        if (!resultado.EsExito) return;   // se conserva el formulario para que corrija los datos
+
+        _modo = ModoPanel.Detalle;
+        await RecargarAsync();
+        await CargarSeleccionadoAsync(resultado.Valor);
+    }
+
+    // ---- Cerrar ----
+    private void PedirCierre()
+    {
+        _mensaje = null;
+        _notaCierre = string.Empty;
+        _modo = ModoPanel.Cerrar;
+    }
+
+    private async Task ConfirmarCierreAsync()
+    {
+        if (_seleccionado is null) return;
+
+        var resultado = await Servicio.CerrarAsync(_seleccionado.Id, _notaCierre);
+        MostrarResultado(resultado);
+
+        if (resultado.Tipo == TipoResultado.NoEncontrado)
+        {
+            _seleccionado = null;
+            _modo = ModoPanel.Detalle;
+            await RecargarAsync();
+            return;
+        }
+
+        if (!resultado.EsExito) return;   // por ejemplo, nota vacia: se queda en el panel de cierre
+
+        _modo = ModoPanel.Detalle;
+        await RecargarAsync();
+        await CargarSeleccionadoAsync(resultado.Valor);
+    }
+
+    private void CancelarAccion() => _modo = ModoPanel.Detalle;
+
+    // ---- Eliminar con confirmacion ----
+    private void PedirEliminar()
+    {
+        _mensaje = null;
+        _modo = ModoPanel.ConfirmarEliminar;
+    }
+
+    private void CancelarEliminar()
+    {
+        _modo = ModoPanel.Detalle;
+        _mensaje = new Mensaje(TipoMensaje.Info, "Eliminación cancelada. El ticket se conservó sin cambios.", Array.Empty<string>());
+    }
+
+    private async Task ConfirmarEliminarAsync()
+    {
+        if (_seleccionado is null) return;
+
+        var resultado = await Servicio.EliminarAsync(_seleccionado.Id);
+        MostrarResultado(resultado);
+
+        if (resultado.Tipo == TipoResultado.Fallo) return;   // la base no respondio: el ticket sigue seleccionado
+
+        _seleccionado = null;
+        _modo = ModoPanel.Detalle;
+        await RecargarAsync();
+    }
+
+    // ---- Mensajes: distinguen exito, ausencia y fallo ----
+    private void MostrarResultado<T>(Resultado<T> resultado)
+    {
+        _mensaje = resultado.Tipo switch
+        {
+            TipoResultado.Exito => new Mensaje(TipoMensaje.Exito, resultado.Mensaje, Array.Empty<string>()),
+            TipoResultado.Invalido => new Mensaje(TipoMensaje.Error, resultado.Mensaje, resultado.Errores),
+            TipoResultado.NoEncontrado => new Mensaje(TipoMensaje.Info, resultado.Mensaje, Array.Empty<string>()),
+            _ => new Mensaje(TipoMensaje.Error, resultado.Mensaje, Array.Empty<string>())
+        };
+    }
+
+    private void OcultarMensaje() => _mensaje = null;
+
+    private static string ClaseAlerta(TipoMensaje tipo) => tipo switch
+    {
+        TipoMensaje.Exito => "alerta-exito",
+        TipoMensaje.Info => "alerta-info",
+        _ => "alerta-error"
+    };
+
+    private static string ClaseEstado(EstadoTicket estado) =>
+        estado == EstadoTicket.Abierto ? "etiqueta-abierto" : "etiqueta-cerrado";
+}
